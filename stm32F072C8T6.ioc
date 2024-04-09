@@ -2,7 +2,7 @@
 CAD.formats=
 CAD.pinconfig=
 CAD.provider=
-DAC.DAC_OutputBuffer2=DAC_OUTPUTBUFFER_DISABLE
+DAC.DAC_OutputBuffer2=DAC_OUTPUTBUFFER_ENABLE
 DAC.IPParameters=DAC_OutputBuffer2
 File.Version=6
 KeepUserPlacement=false

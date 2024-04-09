@@ -76,7 +76,51 @@ void writeDac(float voltage){
 	dac_value = (uint32_t)((voltage / Vref) * (DAC_Resolution - 1));
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_2);
 	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, dac_value);
+	dac_value = HAL_DAC_GetValue(&hdac, DAC_CHANNEL_2);
 
+}
+typedef struct {
+    float dacVoltage;
+    int ledLevel;
+} SignalLevel;
+
+// Определение уровней сигнала и соответствующих значений напряжения ЦАП
+SignalLevel levels[] = {
+    {0.029, 1}, // -20 RSSI
+    {0.044, 2}, // -15 RSSI
+    {0.075, 3}, // -10 RSSI
+    {0.13, 4},  // -5 RSSI
+    {0.23, 5},  // 0 RSSI
+    {0.65, 6}    // +5 RSSI
+};
+int levelsCount = sizeof(levels) / sizeof(SignalLevel);
+
+void CheckSignalLevel() {
+	int i = levelsCount - 1;
+    for (; i>=0; i--) {
+        writeDac(levels[i].dacVoltage); // Установка напряжения ЦАП
+        HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
+        HAL_Delay(10); // Задержка для стабилизации сигнала
+        int result = HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin);
+        if (result == 1) {
+
+             // Установка уровня светодиодов
+            break; // Прекращаем цикл, если детектирован соответствующий уровень сигнала
+        }
+    }
+    SetLedsLevel(levels[i].ledLevel);
+}
+
+void SetLedsLevel(int level) {
+    switch (level) {
+        case 1: One_level(); break;
+        case 2: Two_level(); break;
+        case 3: Three_level(); break;
+        case 4: Four_level(); break;
+        case 5: Five_level(); break;
+        case 6: Six_level(); break;
+        default: Zero_level(); // Нет сигнала
+    }
 }
 /* USER CODE END 0 */
 
@@ -112,28 +156,36 @@ int main(void)
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
 
-  //HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);
-  //HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
-  //HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);
+
   //  HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
   HAL_GPIO_WritePin(Enable_GPIO_Port, Enable_Pin, 1);
-  HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1); HAL_Delay(1500);HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
+  HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int leds = 0;
+  while(1){
+	  CheckSignalLevel();
+	  //HAL_Delay(1500);
+  }
   while (1)
   {
 	  	//HAL_Delay(1500);
 
-	    writeDac(0.6);
+	    writeDac(0.41); //-20 0.029; -15 0.044; -10 0.075; -5 0.13; 0 0.23; +5 0.41
+	    HAL_Delay(10); // Задержка для стабилизации сигнала
 	    float temp = readAdc();
-	    int i = HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin);
-	    if(i==1){
+	    if (HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin)) {
 	    	leds++;HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
-	    	One_level();
-	  	}else {Zero_level();}
+	    	SetLedsLevel(1);
+	  	}else {
+	  		SetLedsLevel(0);
+        }
+
+
+
+
 
 	    //
     /* USER CODE END WHILE */
@@ -263,7 +315,7 @@ static void MX_DAC_Init(void)
   /** DAC channel OUT2 config
   */
   sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
-  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
+  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
   if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();

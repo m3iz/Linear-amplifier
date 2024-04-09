@@ -74,8 +74,9 @@ void writeDac(float voltage){
 	float Vref = 3.3f; // Опорное напряжение ЦАП
 	uint32_t DAC_Resolution = 4096; // 12-битный ЦАП
 	dac_value = (uint32_t)((voltage / Vref) * (DAC_Resolution - 1));
-	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, dac_value);
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_2);
+	HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, dac_value);
+
 }
 /* USER CODE END 0 */
 
@@ -110,18 +111,31 @@ int main(void)
   MX_ADC_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
-  Zero_level();
-  readAdc();
-  writeDac(1);
 
+  //HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);
+  //HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
+  //HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);
+  //  HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
+  HAL_GPIO_WritePin(Enable_GPIO_Port, Enable_Pin, 1);
+  HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1); HAL_Delay(1500);HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int leds = 0;
   while (1)
   {
-	//HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-	HAL_Delay(500);
+	  	//HAL_Delay(1500);
+
+	    writeDac(0.6);
+	    float temp = readAdc();
+	    int i = HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin);
+	    if(i==1){
+	    	leds++;HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
+	    	One_level();
+	  	}else {Zero_level();}
+
+	    //
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -249,7 +263,7 @@ static void MX_DAC_Init(void)
   /** DAC channel OUT2 config
   */
   sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
-  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
+  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE;
   if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();

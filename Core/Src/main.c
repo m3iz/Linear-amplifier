@@ -85,6 +85,7 @@ typedef struct {
     float corVoltage;
 } SignalLevel;
 
+#define NUM 10
 // Определение уровней сигнала и соответствующих значений напряжения ЦАП
 SignalLevel levels[] = {
     {0.029, 1, 0}, // -20 RSSI
@@ -107,13 +108,22 @@ void CheckSignalLevel() {
         HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
         int result = HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin);
         if (result == 1) {
-        	for(int i=0;i<3;i++){
+        	for(int i=0;i<NUM;i++){
         	HAL_Delay(10); // Задержка для стабилизации сигнала
 
         	if(HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin))result++;
         	}
              // Установка уровня светодиодов
-            if(result>=2)break; // Прекращаем цикл, если детектирован соответствующий уровень сигнала
+            if(result>=NUM)break; // Прекращаем цикл, если детектирован соответствующий уровень сигнала
+        }
+        else{
+        	for(int i=0;i<NUM;i++){
+        	        	HAL_Delay(10); // Задержка для стабилизации сигнала
+
+        	        	if(!HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin))result++;
+        	        	}
+        	             // Установка уровня светодиодов
+        	            if(result<NUM-1)break; // Прекращаем цикл, если детектирован соответствующий уровень сигнала
         }
     }
     SetLedsLevel(levels[i].ledLevel);

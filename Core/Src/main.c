@@ -82,30 +82,38 @@ void writeDac(float voltage){
 typedef struct {
     float dacVoltage;
     int ledLevel;
+    float corVoltage;
 } SignalLevel;
 
 // Определение уровней сигнала и соответствующих значений напряжения ЦАП
 SignalLevel levels[] = {
-    {0.029, 1}, // -20 RSSI
-    {0.044, 2}, // -15 RSSI
-    {0.075, 3}, // -10 RSSI
-    {0.13, 4},  // -5 RSSI
-    {0.23, 5},  // 0 RSSI
-    {0.65, 6}    // +5 RSSI
+    {0.029, 1, 0}, // -20 RSSI
+    {0.044, 2, 0}, // -15 RSSI
+    {0.075, 3, 0}, // -10 RSSI
+    {0.13, 4, 0.13},  // -5 RSSI
+    {0.23, 5, 0.1},  // 0 RSSI
+    {0.41, 6, 0.1}    // +5 RSSI
 };
 int levelsCount = sizeof(levels) / sizeof(SignalLevel);
 
 void CheckSignalLevel() {
 	int i = levelsCount - 1;
+
     for (; i>=0; i--) {
+
         writeDac(levels[i].dacVoltage); // Установка напряжения ЦАП
-        HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
+        HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 1);
         HAL_Delay(10); // Задержка для стабилизации сигнала
+        HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, 0);
         int result = HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin);
         if (result == 1) {
+        	for(int i=0;i<3;i++){
+        	HAL_Delay(10); // Задержка для стабилизации сигнала
 
+        	if(HAL_GPIO_ReadPin(Q1_GPIO_Port, Q1_Pin))result++;
+        	}
              // Установка уровня светодиодов
-            break; // Прекращаем цикл, если детектирован соответствующий уровень сигнала
+            if(result>=2)break; // Прекращаем цикл, если детектирован соответствующий уровень сигнала
         }
     }
     SetLedsLevel(levels[i].ledLevel);

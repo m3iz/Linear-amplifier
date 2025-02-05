@@ -88,12 +88,12 @@ typedef struct {
 #define NUM 10
 // Определение уровней сигнала и соответствующих значений напряжения ЦАП
 SignalLevel levels[] = {
-    {0.029, 1, 0}, // -20 RSSI
-    {0.044, 2, 0}, // -15 RSSI
-    {0.075, 3, 0}, // -10 RSSI
-    {0.13, 4, 0.13},  // -5 RSSI
-    {0.23, 5, 0.1},  // 0 RSSI
-    {0.41, 6, 0.1}    // +5 RSSI
+    {0.036, 1, 0}, // -40 RSSI
+    {0.04, 2, 0}, // -15 RSSI
+    {0.058, 3, 0}, // -10 RSSI //выключить АРУ
+    {0.062, 4, 0.13},  // -5 RSSI //включить АРУ
+    {0.074, 5, 0.1},  // 0 RSSI
+    {0.117, 6, 0.1}    // +5 RSSI
 };
 int levelsCount = sizeof(levels) / sizeof(SignalLevel);
 
@@ -134,9 +134,9 @@ void SetLedsLevel(int level) {
         case 1: One_level(); break;
         case 2: Two_level(); break;
         case 3: Three_level(); break;
-        case 4: Four_level(); break;
-        case 5: Five_level(); break;
-        case 6: Six_level(); break;
+        case 4: Four_level(); HAL_GPIO_WritePin(ARY_GPIO_Port, ARY_Pin, 0); break;
+        case 5: Five_level();  HAL_GPIO_WritePin(ARY_GPIO_Port, ARY_Pin, 1); break;
+        case 6: Six_level();  HAL_GPIO_WritePin(ARY_GPIO_Port, ARY_Pin, 1);break;
         default: Zero_level(); // Нет сигнала
     }
 }
@@ -360,18 +360,18 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(Enable_GPIO_Port, Enable_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, ARY_Pin|Enable_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LED6_Pin|LED5_Pin|LED4_Pin|LED3_Pin
                           |LED2_Pin|LED1_Pin|RESET_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Enable_Pin */
-  GPIO_InitStruct.Pin = Enable_Pin;
+  /*Configure GPIO pins : ARY_Pin Enable_Pin */
+  GPIO_InitStruct.Pin = ARY_Pin|Enable_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(Enable_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED6_Pin LED5_Pin LED4_Pin LED3_Pin
                            LED2_Pin LED1_Pin RESET_Pin */
